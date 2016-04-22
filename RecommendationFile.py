@@ -33,7 +33,10 @@ def convert_to_titles(rel_array2):
     movies_file.close()
     recommend_movies = []
     for movieId in movie_indices:
-        recommend_movies.append(movie_dict[str(movieId)])
+        try:
+            recommend_movies.append(movie_dict[str(movieId)])
+        except:
+            pass
     # print(recommend_movies)
     return recommend_movies
 
@@ -58,6 +61,10 @@ def recommend(file_name):
 
     # create sparse matrices
     sparse_matrix = scipy.sparse.csr_matrix((val_list, (row_list, col_list)))
+    weight_for_movie = (sparse_matrix != 0).sum(axis=0)
+    alpha = 0.9
+    weight_for_movie = 1 - alpha ** np.asarray(weight_for_movie).flatten()
+
     # print(max(row_list) + 1)  # This number is used in test file
     weight = np.asarray((sparse_matrix != 0).sum(axis=0)).flatten()
     weight[np.where(weight == 0)[0]] = 1
@@ -75,16 +82,10 @@ def recommend(file_name):
 
     # SVD Computation
     u, sing_values, vt = scipy.sparse.linalg.svds(sparse_matrix,
-                                                  k=10)
+                                                  k=20)
 
     # Convert the singular values to a diagonal matrix shape
     sigma = np.diag(sing_values)
-
-    # This is the row/user we will choose
-    # todo add error handling
-    # todo try out test cases
-    # todo make presentation?
-    # Todo make a final paper
 
     # If the given id is not a user, throw an error and load next screen
     # if not user_count >= chosen_row >= 1:
@@ -97,10 +98,9 @@ def recommend(file_name):
         # of the singular values times the transpose of the right singular values
         # add back the average rate and the AverageExceed Rate
         rel_array1 = u[chosen_row].dot(sigma).dot(vt) + average_rating + average_exceed_rating.item(chosen_row)
+        rel_array1 = np.multiply(rel_array1, weight_for_movie) + (1 - weight_for_movie) * 3
         rel_array2 = rel_array1 - (sparse_matrix.getrow(chosen_row) != 0).multiply(rel_array1)
 
-        # set all the already rated movie to 0
-        # rel_array1 -= (sparse_matrix.getrow(chosen_row) != 0).multiply(rel_array1)
         rel_array1 = np.asarray(rel_array1).flatten()
         rel_array2 = np.asarray(rel_array2).flatten()
 
@@ -113,3 +113,6 @@ def recommend(file_name):
     svd_result.dump("svd_result-100k.dat")
     movie_names = np.asmatrix(movie_names)
     movie_names.dump("rec_results-100k.dat")
+    # svd_result.dump("svd_result-1m.dat")
+    # movie_names = np.asmatrix(movie_names)
+    # movie_names.dump("rec_results-1m.dat")

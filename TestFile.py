@@ -5,16 +5,15 @@
 import numpy as np
 from RecommendationFile import *
 
-# compute_svd()  # Change data set here
 #recommend('ml-1m/ratings.dat')
 
 # Run SVD
 # Used for ml-100k only
-recommend('ml-100k/u4.base')
+recommend('ml-100k/u1.base')
 
 # calculate the Mean Square Error
 svd_result = np.load("svd_result-100k.dat")
-f = open('ml-100k/u4.test', 'r', encoding='utf-8')
+f = open('ml-100k/u1.test', 'r', encoding='utf-8')
 Error_Square_Sum = 0
 count = 0
 for line in f:
